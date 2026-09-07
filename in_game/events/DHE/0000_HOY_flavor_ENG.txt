@@ -1,0 +1,281 @@
+# Fix House of York Founding
+#
+# Vanilla's flavor_eng.45 ("Founding of House of York") picks a random adult,
+# non-ruler, non-heir male Plantagenet to found House of York, only *weighting*
+# (not requiring) candidates who are sons of Edward III. At the 1337 start,
+# none of Edward III's own sons are adults yet, and every other eligible male
+# Plantagenet is already dead (Edmund of Woodstock d.1330, Edmund of Kent
+# d.1331, Edward of Norfolk d.1334, John of Eltham d.1336) except
+# eng_thomas_of_brotherton, who has no living son (his only son died in 1334)
+# and nothing in the game reliably arranges his remarriage (marry_noble.txt's
+# AI urgency weighting only applies to rulers/heirs). So the event is
+# essentially guaranteed to hand York to the wrong historical person, and the
+# freshly-founded dynasty dies with him.
+#
+# Fix: require the candidate to actually be a son of Edward III (matching the
+# real historical founder, Edmund of Langley), both in the firing trigger and
+# in the random-character selection, instead of merely weighting toward it.
+# This means the event can't fire until Edward III has an adult son - exactly
+# when it should, historically circa 1360 - rather than firing early on
+# whichever unrelated uncle happens to be available.
+#
+# This fully redefines the event under its original ID rather than using
+# INJECT:/REPLACE:. Those directives are part of the merge-aware "database"
+# system used by things like laws, gods, and country modifiers (see the
+# eu5-fix-trade-loops mod) - events aren't part of that system, and don't
+# recognize either prefix. Using `REPLACE:flavor_eng.45` here instead
+# silently created a second, bogus event literally named
+# "REPLACE:flavor_eng.45" (visible in the content explorer with a garbled
+# fallback title, no localization existing for that id) while leaving the
+# real vanilla event completely untouched and still bugged - this file's key
+# must be the bare event id.
+#
+# Redefining the same event ID under its bare id is necessary but not
+# sufficient: for a given event ID, EU5 takes the FIRST-loaded definition
+# and discards later ones as a harmless "Duplicated event ID" error.log
+# entry - the opposite of what you'd expect. All game files (vanilla and
+# mods) in a directory are merged and read in ascii filename order, so a
+# same-named vanilla event only gets overridden if this file's name sorts
+# before vanilla's (`flavor_ENG.txt`). Hence the `0000_` filename prefix.
+# Also, because this file now loads before vanilla's, it must declare its
+# own `namespace = flavor_eng` rather than relying on vanilla's namespace
+# = flavor_eng declaration having already run.
+#
+# Also widened the fix from "father is Edward III" to "any ancestor is
+# Edward III" (using the engine's any_ancestor list scope), so the fix keeps
+# working for grandsons/great-grandsons etc. as a campaign runs on for
+# centuries, rather than only covering one generation.
+
+namespace = flavor_eng
+
+flavor_eng.45 = {
+	type = country_event
+
+	fire_only_once = yes
+
+	title = flavor_eng.45.title
+	desc = flavor_eng.45.desc
+	outcome = neutral
+	historical_info = flavor_eng.45.historical_info
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1300.1.1
+		to = 1500.1.1
+		monthly_chance = 33
+	}
+
+
+	trigger = {
+		has_ruler = yes
+		owns_or_non_sovereign_subject_owns = location:york
+		ruler.dynasty ?= dynasty:plantagenet_dynasty
+		dynasty:plantagenet_dynasty = {
+			any_character_in_dynasty = {
+				is_heir = no
+				is_ruler = no
+				is_female = no
+				is_adult = yes
+				# HOY fix: only a descendant of Edward III qualifies.
+				any_ancestor = {
+					this = character:eng_edward_iii
+				}
+			}
+		}
+
+		dynasty:lancaster_dynasty ?= {
+			any_character_in_dynasty = {
+				count > 0
+			}
+		}
+	}
+
+	illustration_tags = {
+        10 = regular
+        10 = interior
+    }
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		dynasty:plantagenet_dynasty = {
+			random_character_in_dynasty = {
+				limit = {
+					is_heir = no
+					is_ruler = no
+					is_female = no
+					is_adult = yes
+					# HOY fix: only a descendant of Edward III qualifies.
+					any_ancestor = {
+						this = character:eng_edward_iii
+					}
+				}
+				weight = {
+					base = 1
+				}
+				save_scope_as = target_character
+				change_dynasty = dynasty:york_dynasty
+				every_descendant = {
+					change_dynasty = dynasty:york_dynasty
+				}
+			}
+			scope:target_character.dynasty = { save_scope_as = target_dynasty }
+		}
+	}
+
+	option = {
+		name = flavor_eng.45.a
+		show_as_tooltip = {
+			scope:target_character = {
+				change_dynasty = dynasty:york_dynasty
+				every_descendant = {
+					change_dynasty = dynasty:york_dynasty
+				}
+			}
+		}
+		add_prestige = prestige_extreme_bonus
+	}
+
+}
+
+# Fix Founding of House Lancaster
+#
+# flavor_eng.46 ("Founding of House Lancaster") has the exact same design flaw
+# as flavor_eng.45 above: it only *weights* its Plantagenet-side candidate
+# toward being a son of Edward III (the same `factor = 100` pattern) rather
+# than requiring it, so it can pick the same wrong, childless-of-line
+# candidate (e.g. eng_thomas_of_brotherton) that flavor_eng.45 could. It
+# doesn't cause the same "dynasty dies immediately" symptom - the event
+# force-marries its pick to an eligible Lancaster-dynasty woman and grants
+# both +100 fertility right there in `immediate`, so the new line gets a
+# near-guaranteed heir regardless of who's picked - but it would still be
+# historically the wrong founder (John of Gaunt, not some unrelated uncle).
+#
+# Fix: same as flavor_eng.45, and only that part - require the
+# Plantagenet-side candidate to be an any_ancestor descendant of Edward III,
+# instead of merely weighting toward it. Everything else about this event
+# (age_in_years < 40, is_married = no, the Lancaster-side bride requirement,
+# the forced marriage + fertility boost in `immediate`) is untouched vanilla
+# behaviour.
+
+flavor_eng.46 = {
+	type = country_event
+
+	fire_only_once = yes
+
+	title = flavor_eng.46.title
+	desc = flavor_eng.46.desc
+	outcome = neutral
+	historical_info = flavor_eng.46.historical_info
+
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1300.1.1
+		to = 1500.1.1
+		monthly_chance = 33
+	}
+
+
+	trigger = {
+		has_ruler = yes
+		owns_or_non_sovereign_subject_owns = location:lancaster
+		ruler.dynasty ?= dynasty:plantagenet_dynasty
+		dynasty:plantagenet_dynasty = {
+			any_character_in_dynasty = {
+				is_heir = no
+				is_ruler = no
+				is_female = no
+				is_adult = yes
+				is_married = no
+				age_in_years < 40
+				is_alive = yes
+				# HOY fix: only a descendant of Edward III qualifies.
+				any_ancestor = {
+					this = character:eng_edward_iii
+				}
+			}
+		}
+		dynasty:lancaster_dynasty ?= {
+			any_character_in_dynasty = {
+				is_heir = no
+				is_ruler = no
+				is_female = yes
+				is_adult = yes
+				is_married = no
+				age_in_years < 35
+				is_alive = yes
+			}
+		}
+	}
+
+	illustration_tags = {
+        10 = happy
+        10 = interior
+    }
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		dynasty:plantagenet_dynasty = {
+			random_character_in_dynasty = {
+				limit = {
+					is_heir = no
+					is_ruler = no
+					is_female = no
+					is_adult = yes
+					is_married = no
+					age_in_years < 40
+					is_alive = yes
+					# HOY fix: only a descendant of Edward III qualifies.
+					any_ancestor = {
+						this = character:eng_edward_iii
+					}
+				}
+				weight = {
+					base = 1
+					modifier = {
+						factor = 100
+						trigger = {
+							exists = father
+							father ?= character:eng_edward_iii
+						}
+					}
+				}
+				add_fertility = 100
+				save_scope_as = target
+			}
+		}
+		dynasty:lancaster_dynasty ?= {
+			random_character_in_dynasty = {
+				limit = {
+					is_heir = no
+					is_ruler = no
+					is_female = yes
+					is_adult = yes
+					is_married = no
+					age_in_years < 35
+					is_alive = yes
+				}
+				add_fertility = 100
+				save_scope_as = target_female
+			}
+		}
+	}
+
+	option = {
+		name = flavor_eng.46.a
+		scope:target = {
+			change_dynasty = dynasty:lancaster_dynasty
+			marry_character = scope:target_female
+
+			every_descendant = {
+				change_dynasty = dynasty:lancaster_dynasty
+			}
+		}
+		add_prestige = prestige_extreme_bonus
+	}
+
+	after = {
+		trigger_event_silently = {
+			id = flavor_eng.666
+			months = { 400 500 }
+		}
+	}
+}
