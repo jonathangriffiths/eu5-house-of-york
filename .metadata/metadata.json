@@ -1,0 +1,11 @@
+{
+	"name":	"Fix House of York",
+	"id":	"fix_house_of_york",
+	"version":	"1.0",
+	"supported_game_version":	"1.3.11",
+	"short_description":	"Fixes the Founding of House of York event to ensure it doesn't immediately go extinct",
+	"tags":	["Fixes", "Historical", "Characters and Dynasties"],
+	"relationships":	[],
+	"game_custom_data":	{
+}
+}
