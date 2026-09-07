@@ -45,6 +45,14 @@
 # Edward III" (using the engine's any_ancestor list scope), so the fix keeps
 # working for grandsons/great-grandsons etc. as a campaign runs on for
 # centuries, rather than only covering one generation.
+#
+# any_ancestor has no built-in trigger_localization template, so the event
+# explorer/tooltip falls back to describing only the innermost comparison
+# ("the character is edward iii plantagenet"), dropping the "an ancestor
+# of" framing - wrapping it in custom_description (a standard, vanilla-used
+# trigger wrapper, see e.g. in_game/common/laws/20_hre.txt) with the
+# `hoy_is_edward_iii_descendant` loc key fixes the displayed text without
+# changing what's actually checked.
 
 namespace = flavor_eng
 
@@ -77,7 +85,10 @@ flavor_eng.45 = {
 				is_adult = yes
 				# HOY fix: only a descendant of Edward III qualifies.
 				any_ancestor = {
-					this = character:eng_edward_iii
+					custom_description = {
+						text = hoy_is_edward_iii_descendant
+						this = character:eng_edward_iii
+					}
 				}
 			}
 		}
@@ -105,7 +116,10 @@ flavor_eng.45 = {
 					is_adult = yes
 					# HOY fix: only a descendant of Edward III qualifies.
 					any_ancestor = {
-						this = character:eng_edward_iii
+						custom_description = {
+							text = hoy_is_edward_iii_descendant
+							this = character:eng_edward_iii
+						}
 					}
 				}
 				weight = {
@@ -189,7 +203,10 @@ flavor_eng.46 = {
 				is_alive = yes
 				# HOY fix: only a descendant of Edward III qualifies.
 				any_ancestor = {
-					this = character:eng_edward_iii
+					custom_description = {
+						text = hoy_is_edward_iii_descendant
+						this = character:eng_edward_iii
+					}
 				}
 			}
 		}
@@ -225,7 +242,10 @@ flavor_eng.46 = {
 					is_alive = yes
 					# HOY fix: only a descendant of Edward III qualifies.
 					any_ancestor = {
-						this = character:eng_edward_iii
+						custom_description = {
+							text = hoy_is_edward_iii_descendant
+							this = character:eng_edward_iii
+						}
 					}
 				}
 				weight = {
