@@ -41,18 +41,18 @@
 # own `namespace = flavor_eng` rather than relying on vanilla's namespace
 # = flavor_eng declaration having already run.
 #
-# Also widened the fix from "father is Edward III" to "any ancestor is
-# Edward III" (using the engine's any_ancestor list scope), so the fix keeps
-# working for grandsons/great-grandsons etc. as a campaign runs on for
-# centuries, rather than only covering one generation.
+# Originally widened the fix from "father is Edward III" to "any ancestor
+# is Edward III" (using the engine's any_ancestor list scope) so it would
+# keep working for grandsons/great-grandsons as a campaign runs on. In
+# practice any_ancestor didn't work correctly in-game, so the check is a
+# plain `father ?= character:eng_edward_iii` instead - matching the
+# original vanilla weighting condition, just required rather than merely
+# weighted.
 #
-# any_ancestor has no built-in trigger_localization template, so the event
-# explorer/tooltip falls back to describing only the innermost comparison
-# ("the character is edward iii plantagenet"), dropping the "an ancestor
-# of" framing - wrapping it in custom_description (a standard, vanilla-used
-# trigger wrapper, see e.g. in_game/common/laws/20_hre.txt) with the
-# `hoy_is_edward_iii_descendant` loc key fixes the displayed text without
-# changing what's actually checked.
+# The same any_ancestor-based fix was also applied to flavor_eng.46
+# ("Founding of House Lancaster") below, which has the identical design
+# flaw (it only weights toward a son of Edward III rather than requiring
+# it); it's fixed the same way here for the same reason.
 
 namespace = flavor_eng
 
@@ -83,13 +83,8 @@ flavor_eng.45 = {
 				is_ruler = no
 				is_female = no
 				is_adult = yes
-				# HOY fix: only a descendant of Edward III qualifies.
-				any_ancestor = {
-					custom_description = {
-						text = hoy_is_edward_iii_descendant
-						this = character:eng_edward_iii
-					}
-				}
+				# HOY fix: only a son of Edward III qualifies.
+				father ?= character:eng_edward_iii
 			}
 		}
 
@@ -114,13 +109,8 @@ flavor_eng.45 = {
 					is_ruler = no
 					is_female = no
 					is_adult = yes
-					# HOY fix: only a descendant of Edward III qualifies.
-					any_ancestor = {
-						custom_description = {
-							text = hoy_is_edward_iii_descendant
-							this = character:eng_edward_iii
-						}
-					}
+					# HOY fix: only a son of Edward III qualifies.
+					father ?= character:eng_edward_iii
 				}
 				weight = {
 					base = 1
@@ -164,11 +154,13 @@ flavor_eng.45 = {
 # historically the wrong founder (John of Gaunt, not some unrelated uncle).
 #
 # Fix: same as flavor_eng.45, and only that part - require the
-# Plantagenet-side candidate to be an any_ancestor descendant of Edward III,
-# instead of merely weighting toward it. Everything else about this event
-# (age_in_years < 40, is_married = no, the Lancaster-side bride requirement,
-# the forced marriage + fertility boost in `immediate`) is untouched vanilla
-# behaviour.
+# Plantagenet-side candidate to be a son of Edward III (`father ?=
+# character:eng_edward_iii`), instead of merely weighting toward it. The
+# old weight modifier that gave a x100 factor to sons of Edward III is now
+# redundant (the limit already requires it) and has been dropped.
+# Everything else about this event (age_in_years < 40, is_married = no,
+# the Lancaster-side bride requirement, the forced marriage + fertility
+# boost in `immediate`) is untouched vanilla behaviour.
 
 flavor_eng.46 = {
 	type = country_event
@@ -201,13 +193,8 @@ flavor_eng.46 = {
 				is_married = no
 				age_in_years < 40
 				is_alive = yes
-				# HOY fix: only a descendant of Edward III qualifies.
-				any_ancestor = {
-					custom_description = {
-						text = hoy_is_edward_iii_descendant
-						this = character:eng_edward_iii
-					}
-				}
+				# HOY fix: only a son of Edward III qualifies.
+				father ?= character:eng_edward_iii
 			}
 		}
 		dynasty:lancaster_dynasty ?= {
@@ -240,23 +227,11 @@ flavor_eng.46 = {
 					is_married = no
 					age_in_years < 40
 					is_alive = yes
-					# HOY fix: only a descendant of Edward III qualifies.
-					any_ancestor = {
-						custom_description = {
-							text = hoy_is_edward_iii_descendant
-							this = character:eng_edward_iii
-						}
-					}
+					# HOY fix: only a son of Edward III qualifies.
+					father ?= character:eng_edward_iii
 				}
 				weight = {
 					base = 1
-					modifier = {
-						factor = 100
-						trigger = {
-							exists = father
-							father ?= character:eng_edward_iii
-						}
-					}
 				}
 				add_fertility = 100
 				save_scope_as = target

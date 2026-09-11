@@ -15,15 +15,19 @@ historical founder.
 
 ## The fix
 
-Changed the weighting into a hard requirement: the candidate must be a descendant of Edward III
-(using `any_ancestor`, not just `father ?=`), applied to both events' `trigger` and
+Changed the weighting into a hard requirement: the candidate must be a son of Edward III
+(`father ?= character:eng_edward_iii`), applied to both events' `trigger` and
 `random_character_in_dynasty` selection. This matches the real historical founders (Edmund of
-Langley for York, John of Gaunt for Lancaster) and keeps working for later generations as a campaign
-runs on. Everything else about both events is untouched vanilla behaviour.
+Langley for York, John of Gaunt for Lancaster). Everything else about both events is untouched
+vanilla behaviour.
 
-**Known tradeoff:** if a campaign diverges enough that Edward III's entire line dies out before
-producing an eligible adult, these events simply won't fire — there's no fallback to the wider
-dynasty (vanilla would still attempt something, buggy as that is).
+An earlier version of this fix used `any_ancestor` instead of `father ?=`, to keep working for
+grandsons/great-grandsons of Edward III as a campaign runs on for centuries. That didn't work
+correctly in-game, so the check was reverted to the simpler, vanilla-matching `father ?=` condition.
+
+**Known tradeoff:** if a campaign diverges enough that Edward III has no eligible adult son when
+these events would fire, they simply won't fire — there's no fallback to the wider dynasty or to
+later generations (vanilla would still attempt something, buggy as that is).
 
 ## Why these files redefine the events under their bare ID, not `INJECT:`/`REPLACE:`
 
