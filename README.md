@@ -25,6 +25,10 @@ runs on. Everything else about both events is untouched vanilla behaviour.
 producing an eligible adult, these events simply won't fire — there's no fallback to the wider
 dynasty (vanilla would still attempt something, buggy as that is).
 
+Also adds `flavor_eng.667`/`.668`, two hidden background events (same pattern vanilla uses for
+`flavor_eng.47`) that give either dynasty's current head two sons ~5 years after he's found with
+none, so the line can't dead-end even generations after founding.
+
 ## Why these files redefine the events under their bare ID, not `INJECT:`/`REPLACE:`
 
 Events aren't part of the merge-aware "database" system that `INJECT:`/`REPLACE:` belong to (unlike

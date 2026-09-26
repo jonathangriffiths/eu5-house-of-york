@@ -1,58 +1,21 @@
 # Fix House of York Founding
 #
-# Vanilla's flavor_eng.45 ("Founding of House of York") picks a random adult,
-# non-ruler, non-heir male Plantagenet to found House of York, only *weighting*
-# (not requiring) candidates who are sons of Edward III. At the 1337 start,
-# none of Edward III's own sons are adults yet, and every other eligible male
-# Plantagenet is already dead (Edmund of Woodstock d.1330, Edmund of Kent
-# d.1331, Edward of Norfolk d.1334, John of Eltham d.1336) except
-# eng_thomas_of_brotherton, who has no living son (his only son died in 1334)
-# and nothing in the game reliably arranges his remarriage (marry_noble.txt's
-# AI urgency weighting only applies to rulers/heirs). So the event is
-# essentially guaranteed to hand York to the wrong historical person, and the
-# freshly-founded dynasty dies with him.
+# Issue: flavor_eng.45 only *weights* its candidate toward being a son of
+# Edward III instead of requiring it, so at the 1337 start it almost always
+# hands York to eng_thomas_of_brotherton - the only other eligible male
+# Plantagenet, and a dead end with no living son. The dynasty dies with him.
 #
-# Fix: require the candidate to actually be a son of Edward III (matching the
-# real historical founder, Edmund of Langley), both in the firing trigger and
-# in the random-character selection, instead of merely weighting toward it.
-# This means the event can't fire until Edward III has an adult son - exactly
-# when it should, historically circa 1360 - rather than firing early on
-# whichever unrelated uncle happens to be available.
+# Fix: require (not just weight) the candidate to be a descendant of Edward
+# III via any_ancestor, so the event can't fire until he has an adult son -
+# matching the real founder, Edmund of Langley - and keeps working for later
+# generations too.
 #
-# This fully redefines the event under its original ID rather than using
-# INJECT:/REPLACE:. Those directives are part of the merge-aware "database"
-# system used by things like laws, gods, and country modifiers (see the
-# eu5-fix-trade-loops mod) - events aren't part of that system, and don't
-# recognize either prefix. Using `REPLACE:flavor_eng.45` here instead
-# silently created a second, bogus event literally named
-# "REPLACE:flavor_eng.45" (visible in the content explorer with a garbled
-# fallback title, no localization existing for that id) while leaving the
-# real vanilla event completely untouched and still bugged - this file's key
-# must be the bare event id.
-#
-# Redefining the same event ID under its bare id is necessary but not
-# sufficient: for a given event ID, EU5 takes the FIRST-loaded definition
-# and discards later ones as a harmless "Duplicated event ID" error.log
-# entry - the opposite of what you'd expect. All game files (vanilla and
-# mods) in a directory are merged and read in ascii filename order, so a
-# same-named vanilla event only gets overridden if this file's name sorts
-# before vanilla's (`flavor_ENG.txt`). Hence the `0000_` filename prefix.
-# Also, because this file now loads before vanilla's, it must declare its
-# own `namespace = flavor_eng` rather than relying on vanilla's namespace
-# = flavor_eng declaration having already run.
-#
-# Also widened the fix from "father is Edward III" to "any ancestor is
-# Edward III" (using the engine's any_ancestor list scope), so the fix keeps
-# working for grandsons/great-grandsons etc. as a campaign runs on for
-# centuries, rather than only covering one generation.
-#
-# any_ancestor has no built-in trigger_localization template, so the event
-# explorer/tooltip falls back to describing only the innermost comparison
-# ("the character is edward iii plantagenet"), dropping the "an ancestor
-# of" framing - wrapping it in custom_description (a standard, vanilla-used
-# trigger wrapper, see e.g. in_game/common/laws/20_hre.txt) with the
-# `hoy_is_edward_iii_descendant` loc key fixes the displayed text without
-# changing what's actually checked.
+# Note on how this override loads: events aren't part of the merge-aware
+# INJECT:/REPLACE: system (unlike laws/gods/modifiers), so this redefines
+# flavor_eng.45 under its bare ID. EU5 keeps the FIRST-loaded definition of a
+# given event ID, so this file is named `0000_...` to sort before vanilla's
+# `flavor_ENG.txt` and load first - which is also why it declares its own
+# `namespace = flavor_eng` instead of relying on vanilla's declaration.
 
 namespace = flavor_eng
 
@@ -148,27 +111,25 @@ flavor_eng.45 = {
 		add_prestige = prestige_extreme_bonus
 	}
 
+	# HOY fix: vanilla never scheduled flavor_eng.666 (spouse backstop) after
+	# York's founding, only Lancaster's - add the same hook here.
+	after = {
+		trigger_event_silently = {
+			id = flavor_eng.666
+			months = { 400 500 }
+		}
+	}
 }
 
 # Fix Founding of House Lancaster
 #
-# flavor_eng.46 ("Founding of House Lancaster") has the exact same design flaw
-# as flavor_eng.45 above: it only *weights* its Plantagenet-side candidate
-# toward being a son of Edward III (the same `factor = 100` pattern) rather
-# than requiring it, so it can pick the same wrong, childless-of-line
-# candidate (e.g. eng_thomas_of_brotherton) that flavor_eng.45 could. It
-# doesn't cause the same "dynasty dies immediately" symptom - the event
-# force-marries its pick to an eligible Lancaster-dynasty woman and grants
-# both +100 fertility right there in `immediate`, so the new line gets a
-# near-guaranteed heir regardless of who's picked - but it would still be
-# historically the wrong founder (John of Gaunt, not some unrelated uncle).
+# Issue: flavor_eng.46 has the same flaw as flavor_eng.45 - it only weights
+# toward a son of Edward III rather than requiring it. It doesn't die out
+# immediately (it force-marries its pick and grants +100 fertility), but it
+# can still crown the wrong historical founder.
 #
-# Fix: same as flavor_eng.45, and only that part - require the
-# Plantagenet-side candidate to be an any_ancestor descendant of Edward III,
-# instead of merely weighting toward it. Everything else about this event
-# (age_in_years < 40, is_married = no, the Lancaster-side bride requirement,
-# the forced marriage + fertility boost in `immediate`) is untouched vanilla
-# behaviour.
+# Fix: same as flavor_eng.45 - require an any_ancestor descendant of Edward
+# III. Everything else is untouched vanilla behaviour.
 
 flavor_eng.46 = {
 	type = country_event
@@ -297,5 +258,147 @@ flavor_eng.46 = {
 			id = flavor_eng.666
 			months = { 400 500 }
 		}
+	}
+}
+
+# Guarantee sons for House York/Lancaster
+#
+# Issue: a dynasty head with no living son is a dead end - same problem
+# flavor_eng.47 solves for Edward III - but York's and Lancaster's founders
+# are created anonymously (no fixed character id to target directly), and
+# vanilla's own spouse backstop (flavor_eng.666) permanently stops
+# rescheduling itself once the War of the Roses starts or the year passes
+# 1500, right when it matters most.
+#
+# Fix: flavor_eng.667 is a recurring dynamic_historical_event (so it applies
+# automatically to any save, including ones where founding already
+# happened - no console/manual trigger needed, which matters on ironman)
+# that checks each dynasty's *current* dynasty_head for zero living sons.
+# When true, it flags that character and waits ~5 years (flavor_eng.668)
+# before granting two sons at once, so it reads as a real pregnancy/birth
+# rather than an instant child appearing. Runs for the whole campaign
+# (1350-1836), not just until 1500/the War of the Roses.
+flavor_eng.667 = {
+	type = country_event
+
+	title = flavor_eng.46.title
+	desc = flavor_eng.46.desc
+	outcome = neutral
+	hidden = yes
+
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1350.1.1
+		to = 1836.12.31
+		monthly_chance = 20
+	}
+
+	trigger = {
+		OR = {
+			dynasty:lancaster_dynasty ?= {
+				dynasty_head ?= {
+					is_alive = yes
+					NOT = { any_child = { is_alive = yes is_female = no } }
+					NOT = { has_variable = hoy_awaiting_heir }
+				}
+			}
+			dynasty:york_dynasty ?= {
+				dynasty_head ?= {
+					is_alive = yes
+					NOT = { any_child = { is_alive = yes is_female = no } }
+					NOT = { has_variable = hoy_awaiting_heir }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				dynasty:lancaster_dynasty ?= {
+					dynasty_head ?= {
+						is_alive = yes
+						NOT = { any_child = { is_alive = yes is_female = no } }
+						NOT = { has_variable = hoy_awaiting_heir }
+					}
+				}
+			}
+			dynasty:lancaster_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
+		}
+		if = {
+			limit = {
+				dynasty:york_dynasty ?= {
+					dynasty_head ?= {
+						is_alive = yes
+						NOT = { any_child = { is_alive = yes is_female = no } }
+						NOT = { has_variable = hoy_awaiting_heir }
+					}
+				}
+			}
+			dynasty:york_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
+		}
+	}
+
+	option = {
+		name = flavor_eng.46.a
+	}
+
+	after = {
+		trigger_event_silently = {
+			id = flavor_eng.668
+			months = { 50 70 }
+		}
+	}
+}
+
+# Payoff half of flavor_eng.667 - see that event's comment.
+#
+# Finds whichever dynasty member was flagged ~5 years ago and gives them two
+# sons at once, then clears the flag.
+flavor_eng.668 = {
+	type = country_event
+
+	title = flavor_eng.46.title
+	desc = flavor_eng.46.desc
+	outcome = neutral
+	hidden = yes
+
+	immediate = {
+		if = {
+			limit = {
+				dynasty:lancaster_dynasty ?= {
+					any_character_in_dynasty = { has_variable = hoy_awaiting_heir is_alive = yes }
+				}
+			}
+			dynasty:lancaster_dynasty = {
+				random_character_in_dynasty = {
+					limit = { has_variable = hoy_awaiting_heir is_alive = yes }
+					save_scope_as = lancaster_father
+				}
+			}
+			create_character = { dynasty = dynasty:lancaster_dynasty birth_location = location:lancaster father = scope:lancaster_father }
+			create_character = { dynasty = dynasty:lancaster_dynasty birth_location = location:lancaster father = scope:lancaster_father }
+			scope:lancaster_father = { remove_variable = hoy_awaiting_heir }
+		}
+		if = {
+			limit = {
+				dynasty:york_dynasty ?= {
+					any_character_in_dynasty = { has_variable = hoy_awaiting_heir is_alive = yes }
+				}
+			}
+			dynasty:york_dynasty = {
+				random_character_in_dynasty = {
+					limit = { has_variable = hoy_awaiting_heir is_alive = yes }
+					save_scope_as = york_father
+				}
+			}
+			create_character = { dynasty = dynasty:york_dynasty birth_location = location:york father = scope:york_father }
+			create_character = { dynasty = dynasty:york_dynasty birth_location = location:york father = scope:york_father }
+			scope:york_father = { remove_variable = hoy_awaiting_heir }
+		}
+	}
+
+	option = {
+		name = flavor_eng.46.a
 	}
 }
