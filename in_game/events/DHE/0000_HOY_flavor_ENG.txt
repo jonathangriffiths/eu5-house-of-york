@@ -263,21 +263,22 @@ flavor_eng.46 = {
 
 # Guarantee sons for House York/Lancaster
 #
-# Issue: a dynasty head with no living son is a dead end - same problem
-# flavor_eng.47 solves for Edward III - but York's and Lancaster's founders
-# are created anonymously (no fixed character id to target directly), and
-# vanilla's own spouse backstop (flavor_eng.666) permanently stops
-# rescheduling itself once the War of the Roses starts or the year passes
-# 1500, right when it matters most.
+# Issue: a dynasty head with no living son is a dead end (same problem
+# flavor_eng.47 solves for Edward III), but the founders here are created
+# anonymously so there's no fixed id to target. A first attempt used a
+# recurring dynamic_historical_event, but the engine requires
+# `fire_only_once = yes` on any dynamic_historical_event - without it the
+# event is logged as invalid and never actually scheduled (error.log:
+# "is tagged as an dynamic historical event, but is not set as
+# fire_only_once"), so it silently never fired.
 #
-# Fix: flavor_eng.667 is a recurring dynamic_historical_event (so it applies
-# automatically to any save, including ones where founding already
-# happened - no console/manual trigger needed, which matters on ironman)
-# that checks each dynasty's *current* dynasty_head for zero living sons.
-# When true, it flags that character and waits ~5 years (flavor_eng.668)
-# before granting two sons at once, so it reads as a real pregnancy/birth
-# rather than an instant child appearing. Runs for the whole campaign
-# (1350-1836), not just until 1500/the War of the Roses.
+# Fix: flavor_eng.667 is a fire_only_once dynamic_historical_event whose only
+# job is to kick off flavor_eng.669, a plain hidden event that reschedules
+# itself indefinitely (like vanilla's flavor_eng.666) to actually do the
+# recurring check. This applies automatically to any save, including ones
+# where founding already happened - no console/manual trigger needed, which
+# matters on ironman. Runs for the whole campaign, not just until 1500/the
+# War of the Roses, unlike flavor_eng.666.
 flavor_eng.667 = {
 	type = country_event
 
@@ -285,32 +286,40 @@ flavor_eng.667 = {
 	desc = flavor_eng.46.desc
 	outcome = neutral
 	hidden = yes
+	fire_only_once = yes
 
 	dynamic_historical_event = {
 		tag = ENG
-		from = 1350.1.1
+		from = 1300.1.1
 		to = 1836.12.31
-		monthly_chance = 20
+		monthly_chance = 100
 	}
 
-	trigger = {
-		OR = {
-			dynasty:lancaster_dynasty ?= {
-				dynasty_head ?= {
-					is_alive = yes
-					NOT = { any_child = { is_alive = yes is_female = no } }
-					NOT = { has_variable = hoy_awaiting_heir }
-				}
-			}
-			dynasty:york_dynasty ?= {
-				dynasty_head ?= {
-					is_alive = yes
-					NOT = { any_child = { is_alive = yes is_female = no } }
-					NOT = { has_variable = hoy_awaiting_heir }
-				}
-			}
+	option = {
+		name = flavor_eng.46.a
+	}
+
+	after = {
+		trigger_event_silently = {
+			id = flavor_eng.669
+			months = { 1 1 }
 		}
 	}
+}
+
+# Recurring checker kicked off once by flavor_eng.667 - see its comment.
+#
+# Checks each dynasty's *current* dynasty_head for zero living sons. When
+# true, flags that character and schedules flavor_eng.668 ~5 years out to
+# grant two sons at once, so it reads as a real pregnancy rather than an
+# instant child appearing. Reschedules itself every 1-2 years, forever.
+flavor_eng.669 = {
+	type = country_event
+
+	title = flavor_eng.46.title
+	desc = flavor_eng.46.desc
+	outcome = neutral
+	hidden = yes
 
 	immediate = {
 		if = {
@@ -324,6 +333,7 @@ flavor_eng.667 = {
 				}
 			}
 			dynasty:lancaster_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
+			trigger_event_silently = { id = flavor_eng.668 months = { 50 70 } }
 		}
 		if = {
 			limit = {
@@ -336,6 +346,7 @@ flavor_eng.667 = {
 				}
 			}
 			dynasty:york_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
+			trigger_event_silently = { id = flavor_eng.668 months = { 50 70 } }
 		}
 	}
 
@@ -345,13 +356,13 @@ flavor_eng.667 = {
 
 	after = {
 		trigger_event_silently = {
-			id = flavor_eng.668
-			months = { 50 70 }
+			id = flavor_eng.669
+			months = { 12 24 }
 		}
 	}
 }
 
-# Payoff half of flavor_eng.667 - see that event's comment.
+# Payoff half of flavor_eng.669 - see that event's comment.
 #
 # Finds whichever dynasty member was flagged ~5 years ago and gives them two
 # sons at once, then clears the flag.
