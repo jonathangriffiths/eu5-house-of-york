@@ -29,6 +29,11 @@ Also adds `flavor_eng.667`/`.669`/`.668`, hidden background events (same pattern
 `flavor_eng.47`) that give either dynasty's current head two sons ~5 years after he's found with
 none, so the line can't dead-end even generations after founding.
 
+Also adds `flavor_eng.670`, a one-shot fix (same scope as vanilla's `flavor_eng.47`) guaranteeing
+Henry Tudor (`character:eng_henry_tudor`, created by `flavor_eng.104`) an heir, since he otherwise
+gets no forced marriage or fertility boost either and could found the Tudor line only to die
+heirless.
+
 ## Why these files redefine the events under their bare ID, not `INJECT:`/`REPLACE:`
 
 Events aren't part of the merge-aware "database" system that `INJECT:`/`REPLACE:` belong to (unlike

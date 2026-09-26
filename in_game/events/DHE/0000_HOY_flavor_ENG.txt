@@ -418,3 +418,46 @@ flavor_eng.668 = {
 		name = flavor_eng.46.a
 	}
 }
+
+# Guarantee Henry Tudor an heir
+#
+# Issue: flavor_eng.104 creates Henry Tudor (character:eng_henry_tudor) with
+# no forced marriage or fertility boost, so he can found the Tudor line and
+# then die heirless - unlike York/Lancaster he has a fixed id, so no
+# dynasty_head lookup is needed to find him.
+#
+# Fix: one-shot only, matching flavor_eng.47's scope, not the perpetual
+# York/Lancaster fix - this just protects Henry Tudor himself, not his
+# descendants generations later.
+flavor_eng.670 = {
+	type = country_event
+
+	fire_only_once = yes
+	hidden = yes
+
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1480.1.1
+		to = 1510.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+		character:eng_henry_tudor ?= {
+			is_alive = yes
+			is_adult = yes
+			any_child = { count < 2 is_alive = yes is_female = no }
+		}
+	}
+
+	immediate = {
+		character:eng_henry_tudor = {
+			create_character = { dynasty = dynasty:tudor_dynasty birth_location = location:pembroke father = character:eng_henry_tudor }
+			create_character = { dynasty = dynasty:tudor_dynasty birth_location = location:pembroke father = character:eng_henry_tudor }
+		}
+	}
+
+	option = {
+		name = flavor_eng.46.a
+	}
+}
