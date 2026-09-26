@@ -309,10 +309,15 @@ flavor_eng.667 = {
 
 # Recurring checker kicked off once by flavor_eng.667 - see its comment.
 #
-# Checks each dynasty's *current* dynasty_head for zero living sons. When
-# true, flags that character and schedules flavor_eng.668 ~5 years out to
-# grant two sons at once, so it reads as a real pregnancy rather than an
-# instant child appearing. Reschedules itself every 1-2 years, forever.
+# Checks each dynasty's *current* dynasty_head for fewer than 2 living sons
+# (a buffer, so losing one to disease doesn't leave zero). When true, flags
+# that character and schedules flavor_eng.668 ~5 years out to grant two sons
+# at once, so it reads as a real pregnancy rather than an instant child
+# appearing. Reschedules itself every 1-2 years, forever.
+#
+# TEMP TESTING TWEAK: delays below shortened to 1 month so this can be
+# verified quickly in an existing save - revert with `git checkout HEAD --
+# in_game/events/DHE/0000_HOY_flavor_ENG.txt` when done.
 flavor_eng.669 = {
 	type = country_event
 
@@ -327,26 +332,26 @@ flavor_eng.669 = {
 				dynasty:lancaster_dynasty ?= {
 					dynasty_head ?= {
 						is_alive = yes
-						NOT = { any_child = { is_alive = yes is_female = no } }
+						any_child = { count < 2 is_alive = yes is_female = no }
 						NOT = { has_variable = hoy_awaiting_heir }
 					}
 				}
 			}
 			dynasty:lancaster_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
-			trigger_event_silently = { id = flavor_eng.668 months = { 50 70 } }
+			trigger_event_silently = { id = flavor_eng.668 months = { 1 1 } }
 		}
 		if = {
 			limit = {
 				dynasty:york_dynasty ?= {
 					dynasty_head ?= {
 						is_alive = yes
-						NOT = { any_child = { is_alive = yes is_female = no } }
+						any_child = { count < 2 is_alive = yes is_female = no }
 						NOT = { has_variable = hoy_awaiting_heir }
 					}
 				}
 			}
 			dynasty:york_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
-			trigger_event_silently = { id = flavor_eng.668 months = { 50 70 } }
+			trigger_event_silently = { id = flavor_eng.668 months = { 1 1 } }
 		}
 	}
 
@@ -357,7 +362,7 @@ flavor_eng.669 = {
 	after = {
 		trigger_event_silently = {
 			id = flavor_eng.669
-			months = { 12 24 }
+			months = { 1 1 }
 		}
 	}
 }
