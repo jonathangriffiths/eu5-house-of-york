@@ -261,24 +261,21 @@ flavor_eng.46 = {
 	}
 }
 
-# Guarantee sons for House York/Lancaster
-#
-# Issue: a dynasty head with no living son is a dead end (same problem
-# flavor_eng.47 solves for Edward III), but the founders here are created
-# anonymously so there's no fixed id to target. A first attempt used a
-# recurring dynamic_historical_event, but the engine requires
-# `fire_only_once = yes` on any dynamic_historical_event - without it the
-# event is logged as invalid and never actually scheduled (error.log:
-# "is tagged as an dynamic historical event, but is not set as
-# fire_only_once"), so it silently never fired.
-#
-# Fix: flavor_eng.667 is a fire_only_once dynamic_historical_event whose only
-# job is to kick off flavor_eng.669, a plain hidden event that reschedules
-# itself indefinitely (like vanilla's flavor_eng.666) to actually do the
-# recurring check. This applies automatically to any save, including ones
-# where founding already happened - no console/manual trigger needed, which
-# matters on ironman. Runs for the whole campaign, not just until 1500/the
-# War of the Roses, unlike flavor_eng.666.
+# Keep York/Lancaster/Tudor from dead-ending on a sonless head.
+# Old approach (create_character-ing sons directly, one-shot) never reliably
+# fired. This boosts fertility instead - matches vanilla's own pattern
+# (flavor_eng.46/.48) - and reschedules itself so it isn't a one-shot.
+scripted_trigger hoy_dynasty_needs_heir = {
+	dynasty_head ?= { is_alive = yes any_child = { count < 2 is_alive = yes is_female = no } }
+}
+
+scripted_effect hoy_boost_dynasty_heir_fertility = {
+	dynasty_head = {
+		add_fertility = 100
+		spouse ?= { add_fertility = 100 }
+	}
+}
+
 flavor_eng.667 = {
 	type = country_event
 
@@ -292,172 +289,35 @@ flavor_eng.667 = {
 		tag = ENG
 		from = 1300.1.1
 		to = 1836.12.31
-		monthly_chance = 100
-	}
-
-	option = {
-		name = flavor_eng.46.a
-	}
-
-	after = {
-		trigger_event_silently = {
-			id = flavor_eng.669
-			months = { 1 1 }
-		}
-	}
-}
-
-# Recurring checker kicked off once by flavor_eng.667 - see its comment.
-#
-# Checks each dynasty's *current* dynasty_head for fewer than 2 living sons
-# (a buffer, so losing one to disease doesn't leave zero). When true, flags
-# that character and schedules flavor_eng.668 ~5 years out to grant two sons
-# at once, so it reads as a real pregnancy rather than an instant child
-# appearing. Reschedules itself every 1-2 years, forever.
-#
-# TEMP TESTING TWEAK: delays below shortened to 1 month so this can be
-# verified quickly in an existing save - revert with `git checkout HEAD --
-# in_game/events/DHE/0000_HOY_flavor_ENG.txt` when done.
-flavor_eng.669 = {
-	type = country_event
-
-	title = flavor_eng.46.title
-	desc = flavor_eng.46.desc
-	outcome = neutral
-	hidden = yes
-
-	immediate = {
-		if = {
-			limit = {
-				dynasty:lancaster_dynasty ?= {
-					dynasty_head ?= {
-						is_alive = yes
-						any_child = { count < 2 is_alive = yes is_female = no }
-						NOT = { has_variable = hoy_awaiting_heir }
-					}
-				}
-			}
-			dynasty:lancaster_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
-			trigger_event_silently = { id = flavor_eng.668 months = { 1 1 } }
-		}
-		if = {
-			limit = {
-				dynasty:york_dynasty ?= {
-					dynasty_head ?= {
-						is_alive = yes
-						any_child = { count < 2 is_alive = yes is_female = no }
-						NOT = { has_variable = hoy_awaiting_heir }
-					}
-				}
-			}
-			dynasty:york_dynasty = { dynasty_head = { set_variable = hoy_awaiting_heir } }
-			trigger_event_silently = { id = flavor_eng.668 months = { 1 1 } }
-		}
-	}
-
-	option = {
-		name = flavor_eng.46.a
-	}
-
-	after = {
-		trigger_event_silently = {
-			id = flavor_eng.669
-			months = { 1 1 }
-		}
-	}
-}
-
-# Payoff half of flavor_eng.669 - see that event's comment.
-#
-# Finds whichever dynasty member was flagged ~5 years ago and gives them two
-# sons at once, then clears the flag.
-flavor_eng.668 = {
-	type = country_event
-
-	title = flavor_eng.46.title
-	desc = flavor_eng.46.desc
-	outcome = neutral
-	hidden = yes
-
-	immediate = {
-		if = {
-			limit = {
-				dynasty:lancaster_dynasty ?= {
-					any_character_in_dynasty = { has_variable = hoy_awaiting_heir is_alive = yes }
-				}
-			}
-			dynasty:lancaster_dynasty = {
-				random_character_in_dynasty = {
-					limit = { has_variable = hoy_awaiting_heir is_alive = yes }
-					save_scope_as = lancaster_father
-				}
-			}
-			create_character = { dynasty = dynasty:lancaster_dynasty birth_location = location:lancaster father = scope:lancaster_father }
-			create_character = { dynasty = dynasty:lancaster_dynasty birth_location = location:lancaster father = scope:lancaster_father }
-			scope:lancaster_father = { remove_variable = hoy_awaiting_heir }
-		}
-		if = {
-			limit = {
-				dynasty:york_dynasty ?= {
-					any_character_in_dynasty = { has_variable = hoy_awaiting_heir is_alive = yes }
-				}
-			}
-			dynasty:york_dynasty = {
-				random_character_in_dynasty = {
-					limit = { has_variable = hoy_awaiting_heir is_alive = yes }
-					save_scope_as = york_father
-				}
-			}
-			create_character = { dynasty = dynasty:york_dynasty birth_location = location:york father = scope:york_father }
-			create_character = { dynasty = dynasty:york_dynasty birth_location = location:york father = scope:york_father }
-			scope:york_father = { remove_variable = hoy_awaiting_heir }
-		}
-	}
-
-	option = {
-		name = flavor_eng.46.a
-	}
-}
-
-# Guarantee Henry Tudor an heir
-#
-# Issue: flavor_eng.104 creates Henry Tudor (character:eng_henry_tudor) with
-# no forced marriage or fertility boost, so he can found the Tudor line and
-# then die heirless - unlike York/Lancaster he has a fixed id, so no
-# dynasty_head lookup is needed to find him.
-#
-# Fix: one-shot only, matching flavor_eng.47's scope, not the perpetual
-# York/Lancaster fix - this just protects Henry Tudor himself, not his
-# descendants generations later.
-flavor_eng.670 = {
-	type = country_event
-
-	fire_only_once = yes
-	hidden = yes
-
-	dynamic_historical_event = {
-		tag = ENG
-		from = 1480.1.1
-		to = 1510.1.1
-		monthly_chance = 20
+		monthly_chance = 10
 	}
 
 	trigger = {
-		character:eng_henry_tudor ?= {
-			is_alive = yes
-			is_adult = yes
-			any_child = { count < 2 is_alive = yes is_female = no }
+		# Same cutoff flavor_eng.666 uses - job's done once the Roses have played out.
+		NOR = {
+			current_year > 1500
+			any_active_disaster = { disaster_type = disaster_type:war_of_the_roses }
+		}
+		OR = {
+			dynasty:york_dynasty ?= { hoy_dynasty_needs_heir = yes }
+			dynasty:lancaster_dynasty ?= { hoy_dynasty_needs_heir = yes }
+			dynasty:tudor_dynasty ?= { hoy_dynasty_needs_heir = yes }
 		}
 	}
 
 	immediate = {
-		character:eng_henry_tudor = {
-			create_character = { dynasty = dynasty:tudor_dynasty birth_location = location:pembroke father = character:eng_henry_tudor }
-			create_character = { dynasty = dynasty:tudor_dynasty birth_location = location:pembroke father = character:eng_henry_tudor }
-		}
+		if = { limit = { dynasty:york_dynasty ?= { hoy_dynasty_needs_heir = yes } } dynasty:york_dynasty = { hoy_boost_dynasty_heir_fertility = yes } }
+		if = { limit = { dynasty:lancaster_dynasty ?= { hoy_dynasty_needs_heir = yes } } dynasty:lancaster_dynasty = { hoy_boost_dynasty_heir_fertility = yes } }
+		if = { limit = { dynasty:tudor_dynasty ?= { hoy_dynasty_needs_heir = yes } } dynasty:tudor_dynasty = { hoy_boost_dynasty_heir_fertility = yes } }
 	}
 
 	option = {
 		name = flavor_eng.46.a
+	}
+
+	# fire_only_once means the DHE roll above only ever starts this once -
+	# this keeps it alive every ~8-12 years for the rest of the campaign.
+	after = {
+		trigger_event_silently = { id = flavor_eng.667 months = { 100 150 } }
 	}
 }
