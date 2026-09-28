@@ -33,6 +33,20 @@ itself every ~8-12 years, protecting every generation rather than just the curre
 same cutoff `flavor_eng.666` already uses (past 1500, or the War of the Roses disaster is active) -
 by then the succession crisis has played out and the safety net is no longer needed.
 
+Also adds `flavor_eng.672`, a hidden event that auto-marries any unmarried adult male (25+) in York,
+Lancaster, or Tudor to a freshly created bride, and grants `+100 fertility` to both spouses.
+
+**Why:** vanilla already has a spouse backstop for this (`flavor_eng.666`), but it only reschedules
+every 400-500 months (33-41 years) and explicitly excludes heirs (`is_heir = no`). A long-lived
+dynasty head can leave his own heir apparent sitting unmarried into his 30s or 40s waiting for that
+rare roll - by the time it (maybe) fires, there may not be enough campaign left to produce a next
+generation before the head dies, dead-ending the line despite there being a living adult son the
+whole time. This isn't a court-size limit or any other hidden cap, it's simply too slow and too
+narrow a net for how critical these two lines are. `.672` reschedules every ~3 years instead, covers
+heirs and Tudor too, and bakes the fertility boost straight into the marriage (matching vanilla's own
+`.45`/`.46` founding-event pattern) rather than depending on `flavor_eng.667`'s fertility boost, which
+only ever applies to the current `dynasty_head` - not to a newly-married heir who isn't head yet.
+
 ## How vanilla engineers the Wars of the Roses
 
 Worth understanding since it's the context the bug undermines: vanilla doesn't leave the Hundred

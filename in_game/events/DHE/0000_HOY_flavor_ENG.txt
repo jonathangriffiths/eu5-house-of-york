@@ -353,6 +353,129 @@ flavor_eng.667 = {
 # again (the earlier create_character attempts in this file's history never
 # set this, so they were only a coin flip). One-shot: only ever needed once to
 # get a legitimate male heir into the line.
+# Keep York/Lancaster/Tudor from dead-ending on an unmarried heir apparent.
+#
+# Issue: vanilla's own spouse backstop (flavor_eng.666, below in the merged
+# vanilla file) only reschedules every 400-500 months (33-41 years), and it
+# explicitly excludes heirs (is_heir = no). A long-lived dynasty head can
+# leave an only son sitting unmarried into his 30s+ waiting for that rare
+# roll - by the time it fires, if it ever does, there may be no time left to
+# produce a next generation before the head dies. This isn't a "court size"
+# limit, just too slow and too narrow a net.
+#
+# Fix: same create_character-and-marry pattern as vanilla's .666, but (a)
+# reschedules every ~3 years instead of 33-41, (b) drops the is_heir
+# exclusion so heirs qualify too, (c) covers Tudor as well as York/Lancaster,
+# and (d) grants +100 fertility to both spouses on marriage (matching
+# vanilla's own .45/.46 founding-event pattern) so the marriage actually
+# converts into a next generation quickly, rather than relying on
+# flavor_eng.667's fertility boost - which only ever applies to the current
+# dynasty_head, not every newly-married member of the line.
+scripted_trigger hoy_needs_spouse = {
+	is_alive = yes
+	is_female = no
+	is_adult = yes
+	age_in_years >= 25
+	is_married = no
+	NOT = { has_trait = eunuch }
+}
+
+flavor_eng.672 = {
+	type = country_event
+
+	title = flavor_eng.46.title
+	desc = flavor_eng.46.desc
+	outcome = neutral
+	hidden = yes
+	fire_only_once = yes
+
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1300.1.1
+		to = 1836.12.31
+		monthly_chance = 10
+	}
+
+	trigger = {
+		NOR = {
+			current_year > 1500
+			any_active_disaster = { disaster_type = disaster_type:war_of_the_roses }
+		}
+		OR = {
+			dynasty:york_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } }
+			dynasty:lancaster_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } }
+			dynasty:tudor_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } }
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { dynasty:york_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } } }
+			dynasty:york_dynasty = {
+				every_character_in_dynasty = {
+					limit = { hoy_needs_spouse = yes }
+					save_temporary_scope_as = target_guy
+					root = {
+						create_character = {
+							female = yes
+							birth_location = location:york
+							marry_character = scope:target_guy
+						}
+					}
+					add_fertility = 100
+					every_spouse = { add_fertility = 100 }
+				}
+			}
+		}
+		if = {
+			limit = { dynasty:lancaster_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } } }
+			dynasty:lancaster_dynasty = {
+				every_character_in_dynasty = {
+					limit = { hoy_needs_spouse = yes }
+					save_temporary_scope_as = target_guy
+					root = {
+						create_character = {
+							female = yes
+							birth_location = location:lancaster
+							marry_character = scope:target_guy
+						}
+					}
+					add_fertility = 100
+					every_spouse = { add_fertility = 100 }
+				}
+			}
+		}
+		if = {
+			limit = { dynasty:tudor_dynasty ?= { any_character_in_dynasty = { hoy_needs_spouse = yes } } }
+			dynasty:tudor_dynasty = {
+				every_character_in_dynasty = {
+					limit = { hoy_needs_spouse = yes }
+					save_temporary_scope_as = target_guy
+					root = {
+						create_character = {
+							female = yes
+							birth_location = location:london
+							marry_character = scope:target_guy
+						}
+					}
+					add_fertility = 100
+					every_spouse = { add_fertility = 100 }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = flavor_eng.46.a
+	}
+
+	# fire_only_once means the DHE roll above only ever starts this once -
+	# this keeps it alive every ~3 years for the rest of the campaign.
+	after = {
+		trigger_event_silently = { id = flavor_eng.672 months = { 30 42 } }
+	}
+}
+
 flavor_eng.671 = {
 	type = country_event
 
