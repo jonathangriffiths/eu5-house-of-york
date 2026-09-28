@@ -287,7 +287,11 @@ scripted_trigger hoy_dynasty_needs_heir = {
 scripted_effect hoy_boost_dynasty_heir_fertility = {
 	dynasty_head = {
 		add_fertility = 100
-		spouse ?= { add_fertility = 100 }
+		# HOY fix: `spouse` isn't a valid scope link in EU5 (characters can have
+		# more than one, via `any_spouse`/`random_spouse`/`every_spouse`) - this
+		# silently failed with an "Unknown effect spouse" error and never
+		# boosted the consort's fertility at all.
+		every_spouse = { add_fertility = 100 }
 	}
 }
 
@@ -334,5 +338,71 @@ flavor_eng.667 = {
 	# this keeps it alive every ~8-12 years for the rest of the campaign.
 	after = {
 		trigger_event_silently = { id = flavor_eng.667 months = { 100 150 } }
+	}
+}
+
+# Guarantee Edward the Black Prince a son
+#
+# Issue: as a fixed, pre-scripted character (game/main_menu/setup/start/
+# 05_characters.txt), the Black Prince has no vanilla event that gives him an
+# heir - if his marriage only produces daughters, male-preference primogeniture
+# hands the crown to whoever her husband's house is, and the WoR never happens.
+#
+# Fix: same fixed-ID pattern as flavor_eng.670 (Henry Tudor) - directly
+# create_character a son, forcing female = no so it can't come up a daughter
+# again (the earlier create_character attempts in this file's history never
+# set this, so they were only a coin flip). One-shot: only ever needed once to
+# get a legitimate male heir into the line.
+flavor_eng.671 = {
+	type = country_event
+
+	fire_only_once = yes
+
+	title = flavor_eng.671.title
+	desc = flavor_eng.671.desc
+	outcome = neutral
+
+	illustration_tags = {
+        10 = happy
+        10 = interior
+    }
+
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1350.1.1
+		to = 1450.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+		character:eng_edward_the_black_prince ?= {
+			is_alive = yes
+			num_of_spouses >= 1
+			NOT = { any_child = { is_alive = yes is_female = no NOT = { has_trait = eunuch } } }
+		}
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		character:eng_edward_the_black_prince = {
+			save_scope_as = father_char
+			random_spouse = { save_scope_as = mother_char }
+		}
+		create_character = {
+			dynasty = dynasty:plantagenet_dynasty
+			culture = culture:english
+			religion = religion:catholic
+			father = scope:father_char
+			mother = scope:mother_char
+			female = no
+			age = 0
+			no_stats = yes
+			trait_category = none
+			birth_location = location:london
+		}
+	}
+
+	option = {
+		name = flavor_eng.671.a
 	}
 }

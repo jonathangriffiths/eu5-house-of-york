@@ -1,2 +1,6 @@
 ﻿l_english:
  hoy_is_edward_iii_descendant: "is a descendant of Edward III of England"
+ flavor_eng.671.title: "A Son for the Black Prince"
+ flavor_eng.671.entry: "A Son for the Black Prince"
+ flavor_eng.671.desc: "To the relief of the whole realm, [father_char.GetName] has been given a son. The succession is secure, and House Plantagenet's grip on the throne will not pass to another through a daughter's marriage."
+ flavor_eng.671.a: "Praise be."
