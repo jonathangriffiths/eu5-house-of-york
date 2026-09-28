@@ -46,6 +46,9 @@ flavor_eng.45 = {
 				is_ruler = no
 				is_female = no
 				is_adult = yes
+				# HOY fix: a eunuch can never father an heir, so he'd found a
+				# York line that immediately dead-ends. Skip him.
+				NOT = { has_trait = eunuch }
 				# HOY fix: only a descendant of Edward III qualifies.
 				any_ancestor = {
 					custom_description = {
@@ -77,6 +80,9 @@ flavor_eng.45 = {
 					is_ruler = no
 					is_female = no
 					is_adult = yes
+					# HOY fix: a eunuch can never father an heir, so he'd found a
+					# York line that immediately dead-ends. Skip him.
+					NOT = { has_trait = eunuch }
 					# HOY fix: only a descendant of Edward III qualifies.
 					any_ancestor = {
 						custom_description = {
@@ -162,6 +168,9 @@ flavor_eng.46 = {
 				is_married = no
 				age_in_years < 40
 				is_alive = yes
+				# HOY fix: a eunuch can never father an heir, so he'd found a
+				# Lancaster line that immediately dead-ends. Skip him.
+				NOT = { has_trait = eunuch }
 				# HOY fix: only a descendant of Edward III qualifies.
 				any_ancestor = {
 					custom_description = {
@@ -201,6 +210,9 @@ flavor_eng.46 = {
 					is_married = no
 					age_in_years < 40
 					is_alive = yes
+					# HOY fix: a eunuch can never father an heir, so he'd found a
+					# Lancaster line that immediately dead-ends. Skip him.
+					NOT = { has_trait = eunuch }
 					# HOY fix: only a descendant of Edward III qualifies.
 					any_ancestor = {
 						custom_description = {
@@ -266,7 +278,10 @@ flavor_eng.46 = {
 # fired. This boosts fertility instead - matches vanilla's own pattern
 # (flavor_eng.46/.48) - and reschedules itself so it isn't a one-shot.
 scripted_trigger hoy_dynasty_needs_heir = {
-	dynasty_head ?= { is_alive = yes any_child = { count < 2 is_alive = yes is_female = no } }
+	# HOY fix: a eunuch son can never continue the line, so he shouldn't
+	# count toward "already has enough sons" - otherwise this fallback
+	# never kicks in for a dynasty whose only sons are sterile.
+	dynasty_head ?= { is_alive = yes any_child = { count < 2 is_alive = yes is_female = no NOT = { has_trait = eunuch } } }
 }
 
 scripted_effect hoy_boost_dynasty_heir_fertility = {
