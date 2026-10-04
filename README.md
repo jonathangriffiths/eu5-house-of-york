@@ -26,7 +26,7 @@ produce Henry Tudor and Bosworth.
   III's whole line dies out with no eligible adult, the events don't fire.
 - `.672` (new, hidden): every ~3 years, marries any unmarried adult male (25+) in York, Lancaster or Tudor,
   heirs included, to a fresh bride and gives both spouses `+100 fertility`.
-- `.667` (new, hidden): every ~8–12 years, gives the dynasty head and spouse a fertility boost when the
+- `.673` (new, hidden): every ~8–12 years, gives the dynasty head and spouse a fertility boost when the
   head has fewer than 2 living sons. It stops after 1500 or once the War of the Roses disaster is
   active, the same cutoff as `.666`.
 - `.671` (new): if the Black Prince has a spouse but no living son, he gets one.

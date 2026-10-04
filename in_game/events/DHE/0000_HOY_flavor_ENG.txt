@@ -295,7 +295,7 @@ scripted_effect hoy_boost_dynasty_heir_fertility = {
 	}
 }
 
-flavor_eng.667 = {
+flavor_eng.673 = {
 	type = country_event
 
 	title = flavor_eng.46.title
@@ -337,7 +337,7 @@ flavor_eng.667 = {
 	# fire_only_once means the DHE roll above only ever starts this once -
 	# this keeps it alive every ~8-12 years for the rest of the campaign.
 	after = {
-		trigger_event_silently = { id = flavor_eng.667 months = { 100 150 } }
+		trigger_event_silently = { id = flavor_eng.673 months = { 100 150 } }
 	}
 }
 
@@ -369,7 +369,7 @@ flavor_eng.667 = {
 # and (d) grants +100 fertility to both spouses on marriage (matching
 # vanilla's own .45/.46 founding-event pattern) so the marriage actually
 # converts into a next generation quickly, rather than relying on
-# flavor_eng.667's fertility boost - which only ever applies to the current
+# flavor_eng.673's fertility boost - which only ever applies to the current
 # dynasty_head, not every newly-married member of the line.
 scripted_trigger hoy_needs_spouse = {
 	is_alive = yes
