@@ -529,3 +529,189 @@ flavor_eng.671 = {
 		name = flavor_eng.671.a
 	}
 }
+
+# Henry Tudor seeks power - Wales condition
+#
+# Issue: vanilla flavor_eng.105 requires Wales (WLS) to be a direct subject of
+# England, and its options only affect Welsh locations owned directly by
+# England or its direct subjects.
+#
+# Fix: trigger requires every location in wales_area to be owned by England or
+# its overlord chain (same top_overlord_or_this check the HYW situation uses);
+# option filters use the same check. Re-sync with vanilla if it changes.
+flavor_eng.105 = {
+	type = country_event
+	title = flavor_eng.105.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					character:eng_margaret_beaufort ?= { is_alive = yes }
+				}
+				desc = flavor_eng.105.desc
+			}
+			triggered_desc = {
+				trigger = { always = yes }
+				desc = flavor_eng.105.desc_henry
+			}
+		}
+	}
+	outcome = neutral
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = ENG
+		from = 1480.1.1
+		to = 1510.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		character:eng_henry_tudor ?= { is_alive = yes }
+
+		# HOY: was c:WLS = { is_subject_of = root }. Now: all of Wales held by England or its (indirect) vassals.
+		area:wales_area = {
+			any_ownable_location_in_area = {
+				percent >= 1
+				owner ?= { top_overlord_or_this ?= c:ENG }
+			}
+		}
+
+		ruler = { dynasty = dynasty:york_dynasty } #This requirement could be removed for a more dynamic feel
+
+		dynasty_exists = lancaster_dynasty
+
+	}
+	image = "gfx/interface/illustrations/government/throne_rooms/throne_room_north_german.dds"
+	immediate = {
+
+		location:buckingham = {
+			save_scope_as = buckingham
+		}
+
+		create_character = {
+			first_name = name_henry
+			dynasty = dynasty:stafford_dynasty
+			estate = estate_type:nobles_estate
+			adm = 30
+			dip = 10
+			mil = 60
+			birth_date = 1455.1.28
+			birth_location = location:stafford
+			religion = religion:catholic
+			save_scope_as = henry_stafford
+			script = eng_henry_stafford
+		}
+
+		character:eng_henry_tudor ?= { save_scope_as = henry_tudor }
+
+		dynasty:lancaster_dynasty = { save_scope_as = lancaster }
+
+		character:eng_margaret_beaufort ?= { save_scope_as = margaret_beaufort }
+
+		create_rebel = {
+			category = pretender
+			name = henry_tudor_support
+			save_scope_as = henry_tudor_support
+		}
+
+	}
+
+	option = {
+		historical_option = yes
+		name = flavor_eng.105.a
+		trigger = { character:eng_margaret_beaufort ?= { is_alive = yes } }
+
+		custom_tooltip = {
+			text = flavor_eng.105.a.tooltip1
+			location:buckingham = {
+				every_pop = {
+					limit = {
+						owner = root
+						OR = {
+							pop_type = pop_type:nobles
+							pop_type = pop_type:peasants
+						}
+					}
+					change_pop_allegiance = scope:henry_tudor_support
+				}
+			}
+		}
+
+		custom_tooltip = {
+			text = flavor_eng.105.a.tooltip2
+			location:plymouth = {
+				every_pop = {
+					limit = {
+						owner = root
+						OR = {
+							pop_type = pop_type:nobles
+							pop_type = pop_type:peasants
+						}
+					}
+					add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+					change_pop_allegiance = scope:henry_tudor_support
+				}
+			}
+
+			area:wales_area = {
+				every_location_in_area = {
+					limit = {
+						OR = {
+							owner ?= { top_overlord_or_this ?= root }
+						}
+					}
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:nobles
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:henry_tudor_support
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+	name = flavor_eng.105.b
+	trigger = { character:eng_margaret_beaufort ?= { is_alive = no } }
+
+		custom_tooltip = {
+			text = flavor_eng.105.b.custom
+			area:wales_area = {
+				every_location_in_area = {
+					limit = {
+						OR = {
+							owner ?= { top_overlord_or_this ?= root }
+						}
+					}
+					every_pop = {
+						limit = {
+							owner = root
+							OR = {
+								pop_type = pop_type:nobles
+								pop_type = pop_type:peasants
+							}
+						}
+						change_pop_allegiance = scope:henry_tudor_support
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = flavor_eng.105.c
+
+		set_new_ruler = scope:henry_tudor
+
+		add_government_power = government_power_extreme_penalty
+
+	}
+
+	historical_info = flavor_eng.105.historical_info
+
+}
